@@ -1,0 +1,10 @@
+Custom OS 
+
+  Custom Kernel 
+    
+    Cross Compiler 
+    A compiler that runs on platform A (host) but generates executables for platform B (target)
+    Built the cross compiler from source code 
+    So now the new gcc can be accessed by 
+    i686-elf-gcc --version. 
+    Nice!
