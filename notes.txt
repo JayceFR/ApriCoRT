@@ -8,3 +8,12 @@ Custom OS
     So now the new gcc can be accessed by 
     i686-elf-gcc --version. 
     Nice!
+
+    BootStrap assembly stub
+    Now we write the bootstrap which bascially assigns some space for the stack pointer (16 KiB)
+    then calls the main function of our C program i.e. the KERNEL 
+    to assemble it use 
+    i686-elf-as OS/boot.s -o boot.o
+    Nice!
+
+    
