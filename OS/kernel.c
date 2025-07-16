@@ -1,4 +1,7 @@
 #include <multiboot.h>
+#include <stdint.h>
+
+typedef unsigned long size_t;
 
 /* Macros. */
 
@@ -30,10 +33,18 @@ static void itoa (char *buf, int base, int d);
 static void putchar (int c);
 void printf (const char *format, ...);
 
+void *memset(void *s, int c, size_t n) {
+  unsigned char *p = (unsigned char *)s;
+  while (n--) {
+      *p++ = (unsigned char)c;
+  }
+  return s;
+}
+
+
 /* Check if MAGIC is valid and print the Multiboot information structure
    pointed by ADDR. */
-void
-cmain (unsigned long magic, unsigned long addr)
+void cmain (unsigned long magic, unsigned long addr)
 {
   multiboot_info_t *mbi;
   
@@ -113,117 +124,55 @@ cmain (unsigned long magic, unsigned long addr)
               (unsigned) multiboot_elf_sec->addr, (unsigned) multiboot_elf_sec->shndx);
     }
 
-  /* Are mmap_* valid? */
-  if (CHECK_FLAG (mbi->flags, 6))
-    {
-      multiboot_memory_map_t *mmap;
-      
-      printf ("mmap_addr = 0x%x, mmap_length = 0x%x\n",
-              (unsigned) mbi->mmap_addr, (unsigned) mbi->mmap_length);
-      for (mmap = (multiboot_memory_map_t *) mbi->mmap_addr;
-           (unsigned long) mmap < mbi->mmap_addr + mbi->mmap_length;
-           mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
-                                    + mmap->size + sizeof (mmap->size)))
-        printf (" size = 0x%x, base_addr = 0x%x%08x,"
-                " length = 0x%x%08x, type = 0x%x\n",
-                (unsigned) mmap->size,
-                (unsigned) (mmap->addr >> 32),
-                (unsigned) (mmap->addr & 0xffffffff),
-                (unsigned) (mmap->len >> 32),
-                (unsigned) (mmap->len & 0xffffffff),
-                (unsigned) mmap->type);
+  if (CHECK_FLAG (mbi->flags, 6)) {
+    multiboot_memory_map_t *mmap;
+    
+    printf ("mmap_addr = 0x%x, mmap_length = 0x%x\n",
+            (unsigned) mbi->mmap_addr, (unsigned) mbi->mmap_length);
+    
+    uint64_t max_addr = 0; 
+    
+    // Macros to simplify the for loop 
+    #define INITMMAP  mmap = (multiboot_memory_map_t *) mbi->mmap_addr
+    #define CHECKMAP  (unsigned long) mmap < mbi->mmap_addr + mbi->mmap_length
+    #define UPDATEMAP mmap = (multiboot_memory_map_t *) ((unsigned long) mmap + mmap->size + sizeof (mmap->size))
+
+    for (INITMMAP; CHECKMAP; UPDATEMAP){
+      // now we have mmap
+      uint64_t region_end = mmap->addr + mmap->len;
+      if (region_end > max_addr){
+        max_addr = region_end;
+      }
     }
 
-  // /* Draw diagonal blue line. */
-  // if (CHECK_FLAG (mbi->flags, 12))
-  //   {
-  //     multiboot_uint32_t color;
-  //     unsigned i;
-  //     void *fb = (void *) (unsigned long) mbi->framebuffer_addr;
+    // define the page size 
+    #define PAGE_SIZE 4096 // 4KB
+    uint64_t total_frames = max_addr / PAGE_SIZE;
+    size_t bitmap_bytes = (total_frames + 7) / 8; 
 
-  //     switch (mbi->framebuffer_type)
-  //       {
-  //       case MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED:
-  //         {
-  //           unsigned best_distance, distance;
-  //           struct multiboot_color *palette;
-            
-  //           palette = (struct multiboot_color *) mbi->framebuffer_palette_addr;
+    // initialise the page bitmap statically 
+    #define MAX_FRAMES (1024 * 1024)
+    static uint8_t page_bitmap[MAX_FRAMES / 8];
+    memset(page_bitmap, 0xFF, bitmap_bytes);
 
-  //           color = 0;
-  //           best_distance = 4*256*256;
-            
-  //           for (i = 0; i < mbi->framebuffer_palette_num_colors; i++)
-  //             {
-  //               distance = (0xff - palette[i].blue) * (0xff - palette[i].blue)
-  //                 + palette[i].red * palette[i].red
-  //                 + palette[i].green * palette[i].green;
-  //               if (distance < best_distance)
-  //                 {
-  //                   color = i;
-  //                   best_distance = distance;
-  //                 }
-  //             }
-  //         }
-  //         break;
 
-  //       case MULTIBOOT_FRAMEBUFFER_TYPE_RGB:
-  //         color = ((1 << mbi->framebuffer_blue_mask_size) - 1) 
-  //           << mbi->framebuffer_blue_field_position;
-  //         break;
-
-  //       case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
-  //         color = '\\' | 0x0100;
-  //         break;
-
-  //       default:
-  //         color = 0xffffffff;
-  //         break;
-  //       }
-  //     for (i = 0; i < mbi->framebuffer_width
-  //            && i < mbi->framebuffer_height; i++)
-  //       {
-  //         switch (mbi->framebuffer_bpp)
-  //           {
-  //           case 8:
-  //             {
-  //               multiboot_uint8_t *pixel = fb + mbi->framebuffer_pitch * i + i;
-  //               *pixel = color;
-  //             }
-  //             break;
-  //           case 15:
-  //           case 16:
-  //             {
-  //               multiboot_uint16_t *pixel
-  //                 = fb + mbi->framebuffer_pitch * i + 2 * i;
-  //               *pixel = color;
-  //             }
-  //             break;
-  //           case 24:
-  //             {
-  //               multiboot_uint32_t *pixel
-  //                 = fb + mbi->framebuffer_pitch * i + 3 * i;
-  //               *pixel = (color & 0xffffff) | (*pixel & 0xff000000);
-  //             }
-  //             break;
-
-  //           case 32:
-  //             {
-  //               multiboot_uint32_t *pixel
-  //                 = fb + mbi->framebuffer_pitch * i + 4 * i;
-  //               *pixel = color;
-  //             }
-  //             break;
-  //           }
-  //       }
-  //   }
-
+    for (INITMMAP; CHECKMAP; UPDATEMAP){
+      if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE){
+        printf("Available : base=0x%x%08x length=0x%x%08x\n", 
+          (uint32_t)(mmap->addr >> 32), (uint32_t)(mmap->addr & 0xFFFFFFFF), 
+          (uint32_t)(mmap->len >> 32), (uint32_t)(mmap->len & 0xFFFFFFFF) );
+      }
+      else{
+        printf("Reserved : base=0x%x%08x length=0x%x%08x\n", 
+          (uint32_t)(mmap->addr >> 32), (uint32_t)(mmap->addr & 0xFFFFFFFF), 
+          (uint32_t)(mmap->len >> 32), (uint32_t)(mmap->len & 0xFFFFFFFF) );
+      }
+    }
+  }
 }    
 
 /* Clear the screen and initialize VIDEO, XPOS and YPOS. */
-static void
-cls (void)
-{
+static void cls (void){
   int i;
 
   video = (unsigned char *) VIDEO;
@@ -238,9 +187,7 @@ cls (void)
 /* Convert the integer D to a string and save the string in BUF. If
    BASE is equal to ’d’, interpret that D is decimal, and if BASE is
    equal to ’x’, interpret that D is hexadecimal. */
-static void
-itoa (char *buf, int base, int d)
-{
+static void itoa (char *buf, int base, int d){
   char *p = buf;
   char *p1, *p2;
   unsigned long ud = d;
@@ -271,29 +218,26 @@ itoa (char *buf, int base, int d)
   /* Reverse BUF. */
   p1 = buf;
   p2 = p - 1;
-  while (p1 < p2)
-    {
-      char tmp = *p1;
-      *p1 = *p2;
-      *p2 = tmp;
-      p1++;
-      p2--;
-    }
+  while (p1 < p2){
+    char tmp = *p1;
+    *p1 = *p2;
+    *p2 = tmp;
+    p1++;
+    p2--;
+  }
 }
 
 /* Put the character C on the screen. */
 static void
-putchar (int c)
-{
-  if (c == '\n' || c == '\r')
-    {
+putchar (int c){
+  if (c == '\n' || c == '\r'){
     newline:
-      xpos = 0;
-      ypos++;
-      if (ypos >= LINES)
-        ypos = 0;
-      return;
-    }
+    xpos = 0;
+    ypos++;
+    if (ypos >= LINES)
+      ypos = 0;
+    return;
+  }
 
   *(video + (xpos + ypos * COLUMNS) * 2) = c & 0xFF;
   *(video + (xpos + ypos * COLUMNS) * 2 + 1) = ATTRIBUTE;
@@ -305,64 +249,57 @@ putchar (int c)
 
 /* Format a string and print it on the screen, just like the libc
    function printf. */
-void
-printf (const char *format, ...)
-{
+void printf (const char *format, ...){
   char **arg = (char **) &format;
   int c;
   char buf[20];
 
   arg++;
   
-  while ((c = *format++) != 0)
-    {
-      if (c != '%')
-        putchar (c);
-      else
-        {
-          char *p, *p2;
-          int pad0 = 0, pad = 0;
-          
-          c = *format++;
-          if (c == '0')
-            {
-              pad0 = 1;
-              c = *format++;
-            }
+  while ((c = *format++) != 0){
+    if (c != '%')
+      putchar (c);
+    else {
+      char *p, *p2;
+      int pad0 = 0, pad = 0;
+      
+      c = *format++;
+      if (c == '0'){
+        pad0 = 1;
+        c = *format++;
+      }
 
-          if (c >= '0' && c <= '9')
-            {
-              pad = c - '0';
-              c = *format++;
-            }
+      if (c >= '0' && c <= '9'){
+        pad = c - '0';
+        c = *format++;
+      }
 
-          switch (c)
-            {
-            case 'd':
-            case 'u':
-            case 'x':
-              itoa (buf, c, *((int *) arg++));
-              p = buf;
-              goto string;
-              break;
+      switch (c){
+        case 'd':
+        case 'u':
+        case 'x':
+          itoa (buf, c, *((int *) arg++));
+          p = buf;
+          goto string;
+          break;
 
-            case 's':
-              p = *arg++;
-              if (! p)
-                p = "(null)";
+        case 's':
+          p = *arg++;
+          if (! p)
+            p = "(null)";
 
-            string:
-              for (p2 = p; *p2; p2++);
-              for (; p2 < p + pad; p2++)
-                putchar (pad0 ? '0' : ' ');
-              while (*p)
-                putchar (*p++);
-              break;
+        string:
+          for (p2 = p; *p2; p2++);
+          for (; p2 < p + pad; p2++)
+            putchar (pad0 ? '0' : ' ');
+          while (*p)
+            putchar (*p++);
+          break;
 
-            default:
-              putchar (*((int *) arg++));
-              break;
-            }
-        }
+        default:
+          putchar (*((int *) arg++));
+          break;
+      }
     }
+  }
 }

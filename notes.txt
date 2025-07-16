@@ -16,6 +16,20 @@ Custom OS
     i686-elf-as OS/boot.s -o boot.o
     Nice!
 
+    Memory Management 
+
+    Static or Dynamic 
+
+    Static is fine but more loss of space. Could solve it programatically but it is inefficient 
+
+    Dynamic solves the above issue. 
+    But it comes with its own tradeoffs. 
+    After dynmically allocating memory for different processes and after some of them complete. We now have 
+    holes in the memory. These holes could sum up to be the amount of memory another process needs. 
+    Compaction solves the problem by moving all the in use memory up by one. This is inefficient too.
+    We could have a better placement algorithm
+
+
     Interupt handler 
     0x0000     | 0x00      | Divide by 0
     0x0004     | 0x01      | Reserved
