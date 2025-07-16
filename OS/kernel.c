@@ -70,6 +70,36 @@ void *alloc_frame(){
   return 0;
 }
 
+// Allocates n contiguous frames
+void *alloc_n_frames(uint64_t n){
+  // need to find n contiguous free frames in memory 
+  for (uint64_t i = 0; i < MAX_FRAMES; i++){
+    uint8_t flag = 0x0; 
+    for (uint64_t start = i; start < i + n; start ++){
+      uint64_t byte_index = start / 8; 
+      uint8_t bit_index = start % 8;
+
+      if (page_bitmap[byte_index] & (1 << bit_index)){
+        flag = 0x1; 
+      }
+    }
+
+    if (flag == 0x0){
+      // set all the bits to 1
+      for (uint64_t start = i; start < i + n; start ++){
+        uint64_t byte_index = start / 8; 
+        uint8_t bit_index = start % 8;
+
+        page_bitmap[byte_index] |= (1 << bit_index);
+      }
+      uint64_t addr = i * PAGE_SIZE;
+      return (void *)(uintptr_t) addr;
+    }
+  }
+  // no contiguous memory is found 
+  return 0; 
+}
+
 // Frees the frame
 void free_frame(void *ptr){
   uint64_t addr   = (uintptr_t) ptr;
@@ -248,6 +278,12 @@ void cmain (unsigned long magic, unsigned long addr)
 
   void *d = alloc_frame();
   printf("Allocated d = 0x%x\n", (uint32_t)(uintptr_t)d);
+
+  void *arr = alloc_n_frames(5);
+  printf(" arr = 0x%x\n", (uint32_t)(uintptr_t)arr);
+
+  void *e = alloc_frame();
+  printf("Allocated e = 0x%x\n", (uint32_t)(uintptr_t)e);
 
 }    
 
