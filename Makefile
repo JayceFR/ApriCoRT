@@ -1,5 +1,6 @@
 CC=i686-elf-
 CODEDIRS=. OS 
+INCDIRS=-I OS 
 OUT = bin
 ISO = isodir
 
@@ -15,7 +16,7 @@ IMGBIN=$(ISO)/boot/myos.bin
 IMGCNF=$(ISO)/boot/grub/grub.cfg
 IMGOUT=$(OUT)/myos.iso
 
-CFLAGS=-std=gnu99 -ffreestanding -O2 -Wall -Wextra
+CFLAGS=-std=gnu99 -ffreestanding -O2 -Wall -Wextra -g $(INCDIRS)
 LINKFLAGS=-ffreestanding -O2 -nostdlib $(ASOUT) $(KERNELOUT) -lgcc
 
 all : $(BINARY)
@@ -24,7 +25,8 @@ $(BINARY) : $(LINKERFILE) $(ASOUT) $(KERNELOUT)
 	$(CC)gcc -T $(LINKERFILE) -o $(BINARY) $(LINKFLAGS)
 
 $(ASOUT) : $(ASFILE)
-	$(CC)as $(ASFILE) -o $(ASOUT)
+	$(CC)gcc -x assembler-with-cpp -c $(ASFILE) -o $(ASOUT) $(CFLAGS)
+# 	$(CC)as $(ASFILE) -o $(ASOUT)
 
 $(KERNELOUT) : $(KERNELFILE)
 	$(CC)gcc -c $(KERNELFILE) -o $(KERNELOUT) $(CFLAGS)
@@ -38,7 +40,7 @@ $(IMGOUT) : $(BINARY)
 iso : $(IMGOUT)
 
 run : $(IMGOUT) 
-	qemu-system-i386 -cdrom $(IMGOUT)
+	qemu-system-i386 -m 512M -cdrom $(IMGOUT)
 
 clean :
 	rm -rf $(ASOUT) $(KERNELOUT) $(BINARY)
