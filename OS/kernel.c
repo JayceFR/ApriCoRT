@@ -26,6 +26,10 @@ static int ypos;
 /* Point to the video memory. */
 static volatile unsigned char *video;
 
+// Comes from the linker
+extern uint32_t kernel_start; 
+extern uint32_t kernel_end; 
+
 /* Forward declarations. */
 void cmain (unsigned long magic, unsigned long addr);
 static void cls (void);
@@ -178,7 +182,20 @@ void cmain (unsigned long magic, unsigned long addr)
           (uint32_t)(mmap->len >> 32), (uint32_t)(mmap->len & 0xFFFFFFFF) );
       }
     }
+
+    uint32_t k_start = (uint32_t) &kernel_start;
+    uint32_t k_end   = (uint32_t) &kernel_end;
+
+    printf("kernel loaded from 0x%x to 0x%x\n", k_start, k_end);
+
+    // now mark the frames occupied by the kernel 
+    for (uint32_t addr = k_start; addr < k_end; addr += PAGE_SIZE){
+      uint32_t frame = addr / PAGE_SIZE; 
+      page_bitmap[frame / 8] |= (1 << (frame % 8));
+    }
+
   }
+
 }    
 
 /* Clear the screen and initialize VIDEO, XPOS and YPOS. */
