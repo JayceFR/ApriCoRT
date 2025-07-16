@@ -158,6 +158,16 @@ void cmain (unsigned long magic, unsigned long addr)
 
     for (INITMMAP; CHECKMAP; UPDATEMAP){
       if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE){
+
+        // Now need to mark the frames as free 
+        uint64_t start = mmap->addr;
+        uint64_t end   = start + mmap->len; 
+
+        for (uint64_t addr = start; addr < end; addr += PAGE_SIZE){
+          uint64_t frame_number = addr / PAGE_SIZE; 
+          page_bitmap[frame_number / 8] &= ~(1 << (frame_number % 8));
+        }
+
         printf("Available : base=0x%x%08x length=0x%x%08x\n", 
           (uint32_t)(mmap->addr >> 32), (uint32_t)(mmap->addr & 0xFFFFFFFF), 
           (uint32_t)(mmap->len >> 32), (uint32_t)(mmap->len & 0xFFFFFFFF) );
