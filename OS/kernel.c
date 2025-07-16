@@ -30,6 +30,11 @@ static volatile unsigned char *video;
 extern uint32_t kernel_start; 
 extern uint32_t kernel_end; 
 
+// BITMAP 
+#define MAX_FRAMES (1024 * 1024)
+#define PAGE_SIZE 4096 // 4KB
+static uint8_t page_bitmap[MAX_FRAMES / 8];
+
 /* Forward declarations. */
 void cmain (unsigned long magic, unsigned long addr);
 static void cls (void);
@@ -44,6 +49,37 @@ void *memset(void *s, int c, size_t n) {
   }
   return s;
 }
+
+// Returns the next free memory location. 
+// Returns 0 (NULL) if it is out of memory 
+void *alloc_frame(){
+  for (uint64_t i = 0; i < MAX_FRAMES; i++){
+    uint64_t byte_index = i / 8; 
+    uint8_t bit_index = i % 8; 
+
+    if (!(page_bitmap[byte_index] & (1 << bit_index))){
+      // Mark the frame used
+      page_bitmap[byte_index] |= (1 << bit_index);
+      // return the address 
+      uint64_t addr = i * PAGE_SIZE;
+      return (void *)(uintptr_t) addr;
+    }
+
+  }
+  // Out of memory lol 
+  return 0;
+}
+
+// Frees the frame
+void free_frame(void *ptr){
+  uint64_t addr   = (uintptr_t) ptr;
+  uint64_t frame  = addr / PAGE_SIZE;
+  uint64_t byte_i = frame / 8; 
+  uint8_t  bit_i  = frame % 8; 
+
+  page_bitmap[byte_i] &= ~(1 << bit_i);
+}
+
 
 
 /* Check if MAGIC is valid and print the Multiboot information structure
@@ -150,13 +186,10 @@ void cmain (unsigned long magic, unsigned long addr)
     }
 
     // define the page size 
-    #define PAGE_SIZE 4096 // 4KB
     uint64_t total_frames = max_addr / PAGE_SIZE;
     size_t bitmap_bytes = (total_frames + 7) / 8; 
 
     // initialise the page bitmap statically 
-    #define MAX_FRAMES (1024 * 1024)
-    static uint8_t page_bitmap[MAX_FRAMES / 8];
     memset(page_bitmap, 0xFF, bitmap_bytes);
 
 
@@ -183,6 +216,9 @@ void cmain (unsigned long magic, unsigned long addr)
       }
     }
 
+    // makr frame 0 as reserved 
+    page_bitmap[0] |= 1;
+
     uint32_t k_start = (uint32_t) &kernel_start;
     uint32_t k_end   = (uint32_t) &kernel_end;
 
@@ -195,6 +231,23 @@ void cmain (unsigned long magic, unsigned long addr)
     }
 
   }
+
+  // Test cases 
+
+  printf("Test for frames");
+  void *a = alloc_frame();
+  void *b = alloc_frame();
+  void *c = alloc_frame();
+
+  printf(" a = 0x%x\n", (uint32_t)(uintptr_t)a);
+  printf(" b = 0x%x\n", (uint32_t)(uintptr_t)b);
+  printf(" c = 0x%x\n", (uint32_t)(uintptr_t)c);
+
+  free_frame(b);
+  printf("Freed frame b\n");
+
+  void *d = alloc_frame();
+  printf("Allocated d = 0x%x\n", (uint32_t)(uintptr_t)d);
 
 }    
 
