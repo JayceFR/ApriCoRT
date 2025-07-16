@@ -34,6 +34,8 @@ extern uint32_t kernel_end;
 #define MAX_FRAMES (1024 * 1024)
 #define PAGE_SIZE 4096 // 4KB
 static uint8_t page_bitmap[MAX_FRAMES / 8];
+uint32_t __attribute__((aligned(4096))) page_directory[1024];
+uint32_t __attribute__((aligned(4096))) first_page_table[1024];
 
 /* Forward declarations. */
 void cmain (unsigned long magic, unsigned long addr);
@@ -45,7 +47,7 @@ void printf (const char *format, ...);
 void *memset(void *s, int c, size_t n) {
   unsigned char *p = (unsigned char *)s;
   while (n--) {
-      *p++ = (unsigned char)c;
+    *p++ = (unsigned char)c;
   }
   return s;
 }
@@ -261,6 +263,31 @@ void cmain (unsigned long magic, unsigned long addr)
     }
 
   }
+
+  // Paging stufff Ooooff
+
+  for (int i = 0; i < 1024; i++){
+    first_page_table[i] = (i * 0x1000) | 3;
+  }
+
+  page_directory[0] = ((uint32_t) first_page_table) | 3;
+
+  // Enable paging 
+
+  // Load page directory
+  asm volatile("mov %0, %%cr3" :: "r"(page_directory));
+
+  // Enable paging (set the PG and PE bits in CR0)
+  uint32_t cr0;
+  asm volatile("mov %%cr0, %0" : "=r"(cr0));
+  cr0 |= 0x80000000; // Set PG bit
+  asm volatile("mov %0, %%cr0" :: "r"(cr0));
+
+
+  uint32_t *ptr = (uint32_t*)0x400000; // 4MB mark (just above what you mapped)
+  *ptr = 42;
+
+
 
   // Test cases 
 
