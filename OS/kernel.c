@@ -3,6 +3,7 @@
 
 #include "stdApricort.h"
 #include "pageFrames.h"
+#include "kernelHeap.h"
 
 typedef unsigned long size_t;
 
@@ -44,52 +45,6 @@ static void cls (void);
 static void itoa (char *buf, int base, int d);
 static void putchar (int c);
 void printf (const char *format, ...);
-
-void *memset(void *s, int c, size_t n) {
-  unsigned char *p = (unsigned char *)s;
-  while (n--) {
-    *p++ = (unsigned char)c;
-  }
-  return s;
-}
-
-
-
-// Takes a virtual address and maps it to a physical address in memory. 
-/* 
-  How it all works
-  let x be an element from page dir 
-  x contains
-    bits 12 - 31 = physical address of the page table 
-    bits 0  - 11 = flags (Present, RW, User, etc.)
-  take the page table location of x i.e the 12 - 31 bits, lets name it y 
-  then finally set y[table_index] = phy_addr passed.
-*/
-
-void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags, uint32_t *page_dir){
-  // need to find page directory index and page table index from virt_addr 
-  uint32_t dir_index   = (virt_addr >> 22) & 0x3FF;
-  uint32_t table_index = (virt_addr >> 12) & 0x3FF;
-  uint32_t offset      = virt_addr & 0xFFF;
-
-  // check if page table doesn't exists 
-  if (!(page_dir[dir_index]) & 0x1){
-    // create one 
-    void *new_frame = alloc_frame();
-    uint32_t addr   = (uint32_t)(uintptr_t) new_frame;
-    
-    // clear it 
-    memset((void *) addr, 0, 4096);
-
-    page_dir[dir_index] = addr | flags | 0x1; 
-  }
-
-  uint32_t *page_table = (uint32_t *) (page_dir[dir_index] & ~0xFFF);
-
-  page_table[table_index] = (phy_addr & ~0xFFF) | (flags & 0xFFF) | 0x1; 
-
-}
-
 
 
 /* Check if MAGIC is valid and print the Multiboot information structure
@@ -261,6 +216,8 @@ void cmain (unsigned long magic, unsigned long addr)
   cr0 |= 0x80000000; // Set PG bit
   asm volatile("mov %0, %%cr0" :: "r"(cr0));
 
+  init_kernel_heap(page_directory);
+
   // Test cases 
 
   // Fail text case 
@@ -287,6 +244,11 @@ void cmain (unsigned long magic, unsigned long addr)
 
   void *e = alloc_frame();
   printf("Allocated e = 0x%x\n", (uint32_t)(uintptr_t)e);
+
+  void *am = kmalloc(20);
+  void *bm = kmalloc(64);
+
+  printf("am = %p\n bm = %p\n", am, bm);
 
 }    
 
