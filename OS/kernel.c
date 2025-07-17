@@ -248,7 +248,7 @@ void cmain (unsigned long magic, unsigned long addr)
   void *am = kmalloc(20);
   void *bm = kmalloc(64);
 
-  printf("am = %p\n bm = %p\n", am, bm);
+  printf("am = 0x%x\n bm = 0x%x\n", (uint32_t)(uintptr_t)am, (uint32_t)(uintptr_t)bm);
 
 }    
 
