@@ -11,4 +11,6 @@ extern void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags, uint
 
 extern void init_paging(uint32_t *page_directory);
 
+extern uint32_t* setup_page_directory(uint32_t *page_dir, uint8_t isUser);
+
 #endif // __PAGEFRA_H__

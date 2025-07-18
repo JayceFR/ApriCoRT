@@ -128,13 +128,13 @@ void cmain (unsigned long magic, unsigned long addr){
   // Test cases 
   list head = create_list();
 
-  process p1 = create_process();
+  process p1 = create_process(page_directory, cmain, 0);
 
-  process p2 = create_process();
+  process p2 = create_process(page_directory, cmain ,0);
 
   add_process_list(head, p1);
   add_process_list(head, p2);
-  remove_by_pid(head, 2);
+  remove_by_pid(head, 0);
 
   print_process_list(head);
 

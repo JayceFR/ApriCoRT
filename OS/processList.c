@@ -5,12 +5,13 @@
 #include "stdApricort.h"
 #include "kernelHeap.h"
 #include "processList.h"
+#include "pageFrames.h"
 
 static uint32_t processId = 0;
 
 // Creates and returns a new process 
 // The pid is automatically set for each process. 
-process create_process(void (*entryPoint)(), uint8_t isUser){
+process create_process(uint32_t *page_dir ,void (*entryPoint)(), uint8_t isUser){
   process p = kmalloc(sizeof(struct process));
   if (p == NULL){
     printf("insufficent memory to create a process");
@@ -19,7 +20,7 @@ process create_process(void (*entryPoint)(), uint8_t isUser){
   p->pid = processId++;
   p->state = READY;
   p->isUser = isUser;
-  // p->page_directory = 
+  p->page_directory = setup_page_directory(page_dir, isUser);
 
   // Allocate stack 
   void *stack = kmalloc(PROCESS_STACK_SIZE);

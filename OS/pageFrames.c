@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include "stdApricort.h"
 #include "pageFrames.h"
+#include "kernelHeap.h"
 
 extern uint8_t *page_bitmap;
 
@@ -108,4 +109,19 @@ void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags, uint32_t *p
 
   page_table[table_index] = (phy_addr & ~0xFFF) | (flags & 0xFFF) | 0x1; 
 
+}
+
+uint32_t* setup_page_directory(uint32_t *page_dir, uint8_t isUser){
+  uint32_t *new_dir = (uint32_t *) kmalloc(4096);
+  if (new_dir == NULL) return NULL;
+
+  for (int i = 0; i < 1024; i++){
+    new_dir[i] = 0x00000002;
+  }
+
+  for (int i = 768; i < 1024; i++){
+    new_dir[i] = page_dir[i];
+  }
+
+  return new_dir;
 }

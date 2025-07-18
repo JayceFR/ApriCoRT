@@ -28,7 +28,7 @@ struct list{
 
 #define PROCESS_STACK_SIZE 4096 // 4KB
 
-extern process create_process();
+extern process create_process(uint32_t *page_dir ,void (*entryPoint)(), uint8_t isUser);
 extern list create_list();
 extern void add_process_list(list head, process p);
 extern void print_process_list(list head);
