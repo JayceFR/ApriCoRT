@@ -10,13 +10,32 @@ static uint32_t processId = 0;
 
 // Creates and returns a new process 
 // The pid is automatically set for each process. 
-process create_process(){
+process create_process(void (*entryPoint)(), uint8_t isUser){
   process p = kmalloc(sizeof(struct process));
   if (p == NULL){
     printf("insufficent memory to create a process");
     return NULL;
   }
   p->pid = processId++;
+  p->state = READY;
+  p->isUser = isUser;
+  // p->page_directory = 
+
+  // Allocate stack 
+  void *stack = kmalloc(PROCESS_STACK_SIZE);
+  if (stack == NULL){
+    printf("Failed to allocated stack\n");
+    return NULL;
+  }
+
+  p->stackTop = stack;
+
+  p->esp = (uint32_t) stack + PROCESS_STACK_SIZE;
+  p->ebp = p->esp; // for old computers 
+
+  // Entry point 
+  p->eip = (uint32_t) entryPoint;
+
   return p;
 }
 

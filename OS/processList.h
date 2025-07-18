@@ -1,11 +1,21 @@
 #ifndef __PROCESS_H__ 
 #define __PROCESS_H__ 
 
+typedef enum {
+  READY,
+  RUNNING,
+  WAITING, 
+  TERMINATED,
+} pstate;
+
 struct process{
   uint32_t pid; // id 
+  uint32_t state; // ready, running, waiting, etc. 
   uint32_t *page_directory; 
   uint32_t esp, ebp, eip;
-  struct process *next; // round robin support
+
+  uint8_t isUser; 
+  void *stackTop;  
 }; 
 typedef struct process *process;
 
@@ -15,6 +25,8 @@ struct list{
   process p;
   list next; 
 };
+
+#define PROCESS_STACK_SIZE 4096 // 4KB
 
 extern process create_process();
 extern list create_list();
