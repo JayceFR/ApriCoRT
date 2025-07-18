@@ -126,16 +126,15 @@ void cmain (unsigned long magic, unsigned long addr){
   init_kernel_heap(page_directory);
 
   // Test cases 
-  list head = createList();
+  list head = create_list();
 
-  process p1 = createProcess();
-  p1->pid = 1; 
+  process p1 = create_process();
 
-  process p2 = createProcess();
-  p2->pid = 2; 
+  process p2 = create_process();
 
-  add(head, p1);
-  add(head, p2);
+  add_process_list(head, p1);
+  add_process_list(head, p2);
+  remove_by_pid(head, 2);
 
   print_process_list(head);
 

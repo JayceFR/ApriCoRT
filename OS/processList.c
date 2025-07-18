@@ -6,16 +6,21 @@
 #include "kernelHeap.h"
 #include "processList.h"
 
-process createProcess(){
+static uint32_t processId = 0;
+
+// Creates and returns a new process 
+// The pid is automatically set for each process. 
+process create_process(){
   process p = kmalloc(sizeof(struct process));
   if (p == NULL){
     printf("insufficent memory to create a process");
     return NULL;
   }
+  p->pid = processId++;
   return p;
 }
 
-list createList(){
+list create_list(){
   list l = kmalloc(sizeof(struct list));
   if (l == NULL){
     printf("insufficient memory to create the process list");
@@ -29,7 +34,7 @@ list createList(){
 }
 
 
-void add(list head, process p){
+void add_process_list(list head, process p){
   if (head->p == NULL){
     head->p = p; 
     return; 
@@ -38,7 +43,7 @@ void add(list head, process p){
   while(curr->next != NULL){
     curr = curr->next;
   }
-  curr->next = createList();
+  curr->next = create_list();
   curr->next->p = p; 
 }
 
@@ -52,4 +57,40 @@ void print_process_list(list head){
     printf("Process id = %d\n", curr->p->pid);
     curr = curr->next;
   }
+}
+
+static void removeHead(list head){
+  if (head == NULL){
+    return;
+  }
+  *head = *(head->next);
+  // need to free temp
+}
+
+// Removes the process from the list
+// Returns the removed processes' pid 
+// Returns NULL if not found
+uint32_t remove_by_pid(list head, uint32_t pid){
+  if (head->p == NULL){
+    return NULL;
+  }
+
+  if (head->p->pid == pid){
+    removeHead(head);
+    return pid;
+  }
+
+  // find the position of the node 
+  list curr = head; 
+  for (; curr->next != NULL && curr->next->p->pid != pid; curr = curr->next){
+    /* EMPTY BODY*/
+  }
+  
+  if (curr->next == NULL){
+    return NULL;
+  }
+
+  // need to remove current's next 
+  curr->next = curr->next->next;
+  return pid;
 }
