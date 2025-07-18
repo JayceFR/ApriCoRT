@@ -10,4 +10,11 @@ typedef unsigned long size_t;
 
 extern void *memset(void *s, int c, size_t n) ;
 
+extern void printf (const char *format, ...);
+
+extern void cls (void);
+extern void putchar (int c);
+
+extern void itoa (char *buf, int base, int d);
+
 #endif // __STDAPRI_H__
