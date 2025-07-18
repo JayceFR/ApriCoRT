@@ -24,8 +24,7 @@ uint32_t __attribute__((aligned(4096))) first_page_table[1024];
 
 /* Check if MAGIC is valid and print the Multiboot information structure
    pointed by ADDR. */
-void cmain (unsigned long magic, unsigned long addr)
-{
+void cmain (unsigned long magic, unsigned long addr){
   multiboot_info_t *mbi;
   
   /* Clear the screen. */
@@ -121,16 +120,9 @@ void cmain (unsigned long magic, unsigned long addr)
   page_directory[0] = ((uint32_t) first_page_table) | 3;
 
   // Enable paging 
+  init_paging(page_directory);
 
-  // Load page directory
-  asm volatile("mov %0, %%cr3" :: "r"(page_directory));
-
-  // Enable paging (set the PG and PE bits in CR0)
-  uint32_t cr0;
-  asm volatile("mov %%cr0, %0" : "=r"(cr0));
-  cr0 |= 0x80000000; // Set PG bit
-  asm volatile("mov %0, %%cr0" :: "r"(cr0));
-
+  // Enable kernel heap
   init_kernel_heap(page_directory);
 
   // Test cases 

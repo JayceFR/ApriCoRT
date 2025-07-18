@@ -6,6 +6,17 @@
 
 extern uint8_t *page_bitmap;
 
+void init_paging(uint32_t *page_directory){
+   // Load page directory
+  asm volatile("mov %0, %%cr3" :: "r"(page_directory));
+
+  // Enable paging (set the PG and PE bits in CR0)
+  uint32_t cr0;
+  asm volatile("mov %%cr0, %0" : "=r"(cr0));
+  cr0 |= 0x80000000; // Set PG bit
+  asm volatile("mov %0, %%cr0" :: "r"(cr0));
+}
+
 // Returns the next free memory location. 
 // Returns 0 (NULL) if it is out of memory 
 void *alloc_frame(){
@@ -80,7 +91,6 @@ void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags, uint32_t *p
   // need to find page directory index and page table index from virt_addr 
   uint32_t dir_index   = (virt_addr >> 22) & 0x3FF;
   uint32_t table_index = (virt_addr >> 12) & 0x3FF;
-  uint32_t offset      = virt_addr & 0xFFF;
 
   // check if page table doesn't exists 
   if (!(page_dir[dir_index]) & 0x1){

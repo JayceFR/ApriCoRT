@@ -9,4 +9,6 @@ extern void free_frame(void *ptr);
 
 extern void map_page(uint32_t virt_addr, uint32_t phy_addr, uint32_t flags, uint32_t *page_dir);
 
+extern void init_paging(uint32_t *page_directory);
+
 #endif // __PAGEFRA_H__
