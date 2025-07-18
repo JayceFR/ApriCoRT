@@ -4,6 +4,7 @@
 #include "stdApricort.h"
 #include "pageFrames.h"
 #include "kernelHeap.h"
+#include "processList.h"
 
 typedef unsigned long size_t;
 
@@ -20,7 +21,6 @@ extern uint32_t kernel_end;
 uint8_t page_bitmap[MAX_FRAMES / 8];
 uint32_t __attribute__((aligned(4096))) page_directory[1024];
 uint32_t __attribute__((aligned(4096))) first_page_table[1024];
-
 
 /* Check if MAGIC is valid and print the Multiboot information structure
    pointed by ADDR. */
@@ -126,35 +126,47 @@ void cmain (unsigned long magic, unsigned long addr){
   init_kernel_heap(page_directory);
 
   // Test cases 
+  list head = createList();
+
+  process p1 = createProcess();
+  p1->pid = 1; 
+
+  process p2 = createProcess();
+  p2->pid = 2; 
+
+  add(head, p1);
+  add(head, p2);
+
+  print_process_list(head);
 
   // Fail text case 
   // uint32_t *ptr = (uint32_t*)0x400000; // 4MB mark (just above what you mapped)
   // *ptr = 42;
 
-  printf("Test for frames");
-  void *a = alloc_frame();
-  void *b = alloc_frame();
-  void *c = alloc_frame();
+  // printf("Test for frames");
+  // void *a = alloc_frame();
+  // void *b = alloc_frame();
+  // void *c = alloc_frame();
 
-  printf(" a = 0x%x\n", (uint32_t)(uintptr_t)a);
-  printf(" b = 0x%x\n", (uint32_t)(uintptr_t)b);
-  printf(" c = 0x%x\n", (uint32_t)(uintptr_t)c);
+  // printf(" a = 0x%x\n", (uint32_t)(uintptr_t)a);
+  // printf(" b = 0x%x\n", (uint32_t)(uintptr_t)b);
+  // printf(" c = 0x%x\n", (uint32_t)(uintptr_t)c);
 
-  free_frame(b);
-  printf("Freed frame b\n");
+  // free_frame(b);
+  // printf("Freed frame b\n");
 
-  void *d = alloc_frame();
-  printf("Allocated d = 0x%x\n", (uint32_t)(uintptr_t)d);
+  // void *d = alloc_frame();
+  // printf("Allocated d = 0x%x\n", (uint32_t)(uintptr_t)d);
 
-  void *arr = alloc_n_frames(5);
-  printf(" arr = 0x%x\n", (uint32_t)(uintptr_t)arr);
+  // void *arr = alloc_n_frames(5);
+  // printf(" arr = 0x%x\n", (uint32_t)(uintptr_t)arr);
 
-  void *e = alloc_frame();
-  printf("Allocated e = 0x%x\n", (uint32_t)(uintptr_t)e);
+  // void *e = alloc_frame();
+  // printf("Allocated e = 0x%x\n", (uint32_t)(uintptr_t)e);
 
-  void *am = kmalloc(20);
-  void *bm = kmalloc(64);
+  // void *am = kmalloc(20);
+  // void *bm = kmalloc(64);
 
-  printf("am = 0x%x\n bm = 0x%x\n", (uint32_t)(uintptr_t)am, (uint32_t)(uintptr_t)bm);
+  // printf("am = 0x%x\n bm = 0x%x\n", (uint32_t)(uintptr_t)am, (uint32_t)(uintptr_t)bm);
 
 }    
