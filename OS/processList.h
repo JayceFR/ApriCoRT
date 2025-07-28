@@ -1,34 +1,37 @@
-#ifndef __PROCESS_H__ 
-#define __PROCESS_H__ 
+#ifndef __PROCESS_H__
+#define __PROCESS_H__
+
+#include <stdint.h>
 
 typedef enum {
   READY,
   RUNNING,
-  WAITING, 
+  WAITING,
   TERMINATED,
 } pstate;
 
-struct process{
-  uint32_t pid; // id 
-  uint32_t state; // ready, running, waiting, etc. 
-  uint32_t *page_directory; 
+struct process {
+  uint32_t pid;   // id
+  uint32_t state; // ready, running, waiting, etc.
+  uint32_t *page_directory;
   uint32_t esp, ebp, eip;
 
-  uint8_t isUser; 
-  void *stackTop;  
-}; 
+  uint8_t isUser;
+  void *stackTop;
+};
 typedef struct process *process;
 
 struct list;
-typedef struct list *list; 
-struct list{
+typedef struct list *list;
+struct list {
   process p;
-  list next; 
+  list next;
 };
 
 #define PROCESS_STACK_SIZE 4096 // 4KB
 
-extern process create_process(uint32_t *page_dir ,void (*entryPoint)(), uint8_t isUser);
+extern process create_process(uint32_t *page_dir, void (*entryPoint)(),
+                              uint8_t isUser);
 extern list create_list();
 extern void add_process_list(list head, process p);
 extern void print_process_list(list head);
